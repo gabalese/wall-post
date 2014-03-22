@@ -11,7 +11,7 @@ class TestSpecs(unittest.TestCase):
         # Init command context
         self.command = Command(self.users)
 
-    def test_1_user_can_post_message_in_own_timeline(self):
+    def test_user_can_post_message_in_own_timeline(self):
         """
         User can publish messages to a personal timeline
         """
@@ -27,7 +27,7 @@ class TestSpecs(unittest.TestCase):
         # Last message should be the last timeline element
         self.assertTrue("I love the weather today" == [message.message for message in alice.getposts()][-1])
 
-    def test_2_user_can_view_other_user_timeline(self):
+    def test_user_can_view_other_user_timeline(self):
         """
         User can view other user's timeline
         """
@@ -47,7 +47,7 @@ class TestSpecs(unittest.TestCase):
         for message in self.command._usertimeline("Alice"):
             self.assertTrue(message.username == "Alice")
 
-    def test_3_user_can_follow_other_user(self):
+    def test_user_can_follow_other_user(self):
         """
         User can subscribe to other people's timeline...
         """
@@ -56,14 +56,14 @@ class TestSpecs(unittest.TestCase):
         status = self.command.execute("Charlie follows Alice")
 
         # Command is valid
-        self.assertTrue(status is not False)
+        self.assertTrue(status is True)
 
         # Alice is in Charlie's following list
         charlie = self.users.getuser("Charlie")
         charlie_follows = [user.username for user in charlie.getfollowing()]
         self.assertIn("Alice", charlie_follows)
 
-    def test_4_user_can_view_following_users_timeline(self):
+    def test_user_can_view_following_users_timeline(self):
         """
         ... and User can view an aggregated list of all subscription
         """
@@ -78,23 +78,23 @@ class TestSpecs(unittest.TestCase):
         self.command.execute("Charlie wall")
         charlie_wall = self.command._user_wall("Charlie")
         users_in_charlie_wall = set([message.username for message in charlie_wall])
-        self.assertTrue(set(["Charlie", "Bob", "Alice"]).issubset(users_in_charlie_wall))
+        self.assertTrue({"Charlie", "Bob", "Alice"}.issubset(users_in_charlie_wall))
 
-    def test_5_timeline_must_be_in_reverse_order(self):
+    def test_timeline_must_be_in_reverse_order(self):
         """
         User's or aggregated wall must be in chronological reverse order
         """
         import time
         self.command.execute("Charlie -> In New York today!")
-        time.sleep(0.1)
+        time.sleep(0.2)
         self.command.execute("Alice -> Another full day at the office")
-        time.sleep(0.1)
+        time.sleep(0.5)
         self.command.execute("Charlie -> Love the weather!")
-        time.sleep(0.1)
+        time.sleep(0.4)
         self.command.execute("Charlie follows Alice")
-        time.sleep(0.1)
+        time.sleep(0.3)
         self.command.execute("Alice -> I hate my life")
-        time.sleep(0.1)
+        time.sleep(0.8)
         charlie_wall = self.command.execute("Charlie wall")
 
         # Each message[n] should be newer than message[n+1]

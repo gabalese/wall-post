@@ -1,4 +1,5 @@
 import datetime
+import sys
 
 
 class Users(object):
@@ -31,7 +32,7 @@ class Message(object):
         post_ts = datetime.datetime.fromtimestamp(int(self.timestamp))
         delta = current_ts - post_ts
         minutes = delta.seconds / 60
-        return "{} minut{} ago".format(minutes, "e" if minutes > 0 else "es")
+        return "{} minut{} ago".format(minutes, "es" if minutes != 1 else "e")
 
 
 class User(object):
@@ -86,8 +87,10 @@ class Command(object):
         user = self._users.getuser(username)
         following = self._users.getuser(following)
 
-        if user and following is not None:
+        if user is not None and following is not None:
             user.addfollowing(following)
+        else:
+            raise NoSuchUser
 
     def _usertimeline(self, user):
         user = self._users.getuser(user)
@@ -110,10 +113,14 @@ class Command(object):
     def execute(self, commandstring):
         """
         Command examples:
-        > Alice -> <message>        / Posting
-        > Alice                     / Reading
-        > Alice follows <username>  / Following
-        > Alice wall                / Subscription wall
+        > <username> -> <message>
+        / Posting
+        > <username>
+        / Reading
+        > <username> follows <username>
+        Following
+        > <username> wall
+        Subscription wall
 
         :param commandstring:
         """
@@ -141,7 +148,8 @@ class Command(object):
                 if len(command[2:]) != 1:
                     raise InvalidCommand
                 else:
-                    return self._follow(command[0], command[2])
+                    self._follow(command[0], command[2])
+                    return True
             else:
                 raise InvalidCommand
         else:
@@ -151,6 +159,16 @@ if __name__ == "__main__":
     print "Welcome to WallPost!"
     users = Users()
     prompt = Command(users)
+    print prompt.execute.__doc__
     while True:
-        user_input = raw_input(">")
-        print prompt.execute(user_input)
+        try:
+            user_input = raw_input("> ")
+            status = prompt.execute(user_input)
+            if status is not True:
+                print "\n".join(status)
+        except InvalidCommand:
+            print "Sorry, can't understand your command."
+        except NoSuchUser:
+            print "Sorry, the user does not exist."
+        except KeyboardInterrupt:
+            sys.exit()
