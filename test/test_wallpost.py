@@ -164,3 +164,27 @@ class TestUsers(unittest.TestCase):
             self.command.execute("Piotr -> Sdrastvuijte")
             self.command.execute("Nadja -> Sdrastvuijte")
             self.command.execute("Olga follows Piotr Olga Nadja")
+
+    def test_time_intervals_seconds(self):
+        import time
+        self.command.execute("Alice -> I love the weather today")
+        self.command.execute("Bob -> Damn! We lost!")
+        self.command.execute("Bob -> Good game though.")
+        self.command.execute("Charlie -> I'm in New York today! Anyone wants to have a coffee?")
+        self.command.execute("Charlie follows Alice")
+        time.sleep(2)
+        charlie_wall = self.command.execute("Charlie wall")
+        self.assertIn("2 seconds ago", charlie_wall[0])
+        charlie_timeline = self.command.execute("Charlie")
+        self.assertIn("2 seconds ago", charlie_timeline[0])
+
+    def test_time_intervals_minutes(self):
+        charlie = User("Charlie")
+        self.users.adduser(charlie)
+        message = Message("Charlie", "A-ehm.")
+        timestamp_now = datetime.datetime.now().strftime("%s")
+        timestamp_two_minutes_ago = int(timestamp_now) - 65
+        message.timestamp = timestamp_two_minutes_ago
+        charlie.addpost(message)
+        charlie_wall = self.command.execute("Charlie")
+        self.assertIn("1 minute ago", charlie_wall[0])
