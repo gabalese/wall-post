@@ -25,6 +25,14 @@ class Message(object):
         self.message = message
         self.timestamp = datetime.datetime.now().strftime("%s")
 
+    @property
+    def minutes_ago(self):
+        current_ts = datetime.datetime.now()
+        post_ts = datetime.datetime.fromtimestamp(int(self.timestamp))
+        delta = current_ts - post_ts
+        minutes = delta.seconds / 60
+        return "{} minut{} ago".format(minutes, "e" if minutes > 0 else "es")
+
 
 class User(object):
     def __init__(self, name):
@@ -50,10 +58,6 @@ class NoSuchUser(Exception):
     pass
 
 
-class Messages(object):
-    pass
-
-
 class InvalidCommand(Exception):
     pass
 
@@ -62,14 +66,12 @@ class Command(object):
     """
 
     """
-    def __init__(self, users_context, messages_context):
+    def __init__(self, users_context):
         """
 
         :param users_context:
-        :param messages_context:
         """
         self._users = users_context
-        self._messages = messages_context
 
     def _post(self, username, message):
         user = self._users.getuser(username)
@@ -119,7 +121,8 @@ class Command(object):
 
         if len(command) == 1:
             # Simple user name
-            return self._usertimeline(command[0])
+            timeline = self._usertimeline(command[0])
+            return ["{} ({})".format(message.message, message.minutes_ago) for message in timeline]
         elif len(command) == 2:
             # User reads his wall
             if command[1] == "wall":
@@ -130,8 +133,17 @@ class Command(object):
             # user posts or follows someone else
             if command[1] == "->":
                 # User posts
-                return self._post(command[0], " ".join(command[2:]))
+                self._post(command[0], " ".join(command[2:]))
+                return True
             if command[1] == "follows":
-                return self._follow(command[0], command[2])
+                if len(command[2:]) != 1:
+                    raise InvalidCommand
+                else:
+                    return self._follow(command[0], command[2])
+            else:
+                raise InvalidCommand
         else:
             return False
+
+if __name__ == "__main__":
+    pass

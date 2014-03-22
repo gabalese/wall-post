@@ -7,10 +7,9 @@ class TestSpecs(unittest.TestCase):
         """
         Init data repositories
         """
-        self.messages = Messages()
         self.users = Users()
         # Init command context
-        self.command = Command(self.users, self.messages)
+        self.command = Command(self.users)
 
     def test_1_user_can_post_message_in_own_timeline(self):
         """
@@ -20,7 +19,7 @@ class TestSpecs(unittest.TestCase):
         alice = self.users.getuser("Alice")
 
         # Command is valid
-        self.assertTrue(status is not False)
+        self.assertTrue(status is not None)
 
         # Last message is saved in user timeline
         self.assertIn("I love the weather today", [message.message for message in alice.getposts()])
@@ -33,16 +32,19 @@ class TestSpecs(unittest.TestCase):
         User can view other user's timeline
         """
         self.command.execute("Alice -> I love the weather today")
+        self.command.execute("Alice -> It's sunny and warm")
         status = self.command.execute("Alice")
 
         # Command is valid
-        self.assertTrue(status is not False)
+        self.assertTrue(status is not None)
 
         # status contains the user timeline, a list of Message objects
         self.assertIsInstance(status, list)
 
+        print status
+
         # is this Alice's timeline?
-        for message in status:
+        for message in self.command._usertimeline("Alice"):
             self.assertTrue(message.username == "Alice")
 
     def test_3_user_can_follow_other_user(self):
@@ -74,8 +76,8 @@ class TestSpecs(unittest.TestCase):
         self.command.execute("Charlie follows Bob")
 
         charlie_wall = self.command.execute("Charlie wall")
-        for message in charlie_wall:
-            print message.username, message.timestamp
+        users_in_charlie_wall = set([message.username for message in charlie_wall])
+        self.assertTrue(set(["Charlie", "Bob", "Alice"]).issubset(users_in_charlie_wall))
 
     def test_5_timeline_must_be_in_reverse_order(self):
         """
@@ -83,15 +85,15 @@ class TestSpecs(unittest.TestCase):
         """
         import time
         self.command.execute("Charlie -> In New York today!")
-        time.sleep(1)
+        time.sleep(0.1)
         self.command.execute("Alice -> Another full day at the office")
-        time.sleep(1)
+        time.sleep(0.1)
         self.command.execute("Charlie -> Love the weather!")
-        time.sleep(1)
+        time.sleep(0.1)
         self.command.execute("Charlie follows Alice")
-        time.sleep(1)
+        time.sleep(0.1)
         self.command.execute("Alice -> I hate my life")
-        time.sleep(1)
+        time.sleep(0.1)
         charlie_wall = self.command.execute("Charlie wall")
 
         # Each message[n] should be newer than message[n+1]
@@ -105,10 +107,9 @@ class TestUsers(unittest.TestCase):
         """
         Init data repositories
         """
-        self.messages = Messages()
         self.users = Users()
         # Init command context
-        self.command = Command(self.users, self.messages)
+        self.command = Command(self.users)
 
     def test_no_such_user(self):
         """
@@ -117,3 +118,48 @@ class TestUsers(unittest.TestCase):
         """
         with self.assertRaises(NoSuchUser):
             self.command.execute("Piotr")
+
+    def test_user_follows_no_users(self):
+        self.command.execute("Piotr -> Ja liublju tebja")
+        status = self.command.execute("Piotr wall")
+        self.assertEqual(len(status), 1)
+
+    def test_user_follows_more_than_one_user(self):
+        self.command.execute("Nadja -> Its'a good day")
+        self.command.execute("Piotr -> Ja liublju tebja, Nadja")
+        self.command.execute("Piotr follows Nadja")
+        self.command.execute("Olga -> What's up guys?")
+        self.command.execute("Piotr -> Tebja todze liubliu!")
+        self.command.execute("Piotr follows Olga")
+        self.command.execute("Olga -> Are you serious?")
+
+        piotr = self.users.getuser("Piotr")
+        self.assertEqual(len(piotr.getfollowing()), 2)
+
+        followed_by_piotr = piotr.getfollowing()
+        self.assertIn("Olga", [user.username for user in followed_by_piotr])
+        self.assertIn("Nadja", [user.username for user in followed_by_piotr])
+
+        for following in followed_by_piotr:
+            self.assertIsNot(None, [(message.message, message.username) for message in following.getposts()])
+
+        self.assertEqual(len(piotr.getposts()), 2)
+
+        status = self.command.execute("Piotr wall")
+        self.assertEqual(len(status), 5)
+
+    def test_invalid_user(self):
+
+        with self.assertRaises(NoSuchUser):
+            self.command.execute("Piotr")
+
+    def test_invalid_commands(self):
+
+        with self.assertRaises(InvalidCommand):
+            self.command.execute("Piotr wall Nestor")
+
+        with self.assertRaises(InvalidCommand):
+            self.command.execute("Olga -> Hey")
+            self.command.execute("Piotr -> Sdrastvuijte")
+            self.command.execute("Nadja -> Sdrastvuijte")
+            self.command.execute("Olga follows Piotr Olga Nadja")
