@@ -26,12 +26,15 @@ class Message(object):
         self.timestamp = datetime.datetime.now().strftime("%s")
 
     @property
-    def minutes_ago(self):
+    def time_ago(self):
         current_ts = datetime.datetime.now()
         post_ts = datetime.datetime.fromtimestamp(int(self.timestamp))
         delta = current_ts - post_ts
         minutes = delta.seconds / 60
-        return "{} minut{} ago".format(minutes, "es" if minutes != 1 else "e")
+        if minutes > 0:
+            return "{} minut{} ago".format(minutes, "es" if minutes != 1 else "e")
+        else:
+            return "{} second{} ago".format(delta.seconds, "s" if delta.seconds != 1 else "")
 
 
 class User(object):
@@ -128,12 +131,12 @@ class Command(object):
         if len(command) == 1:
             # Simple user name
             timeline = self._usertimeline(command[0])
-            return ["{} ({})".format(message.message, message.minutes_ago) for message in timeline]
+            return ["{} ({})".format(message.message, message.time_ago) for message in timeline]
         elif len(command) == 2:
             # User reads his wall
             if command[1] == "wall":
                 user_wall = self._user_wall(command[0])
-                return ["{} - {} ({})".format(message.username, message.message, message.minutes_ago)
+                return ["{} - {} ({})".format(message.username, message.message, message.time_ago)
                         for message in user_wall]
             else:
                 raise InvalidCommand
