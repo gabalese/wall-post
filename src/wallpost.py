@@ -126,7 +126,9 @@ class Command(object):
         elif len(command) == 2:
             # User reads his wall
             if command[1] == "wall":
-                return self._user_wall(command[0])
+                user_wall = self._user_wall(command[0])
+                return ["{} - {} ({})".format(message.username, message.message, message.minutes_ago)
+                        for message in user_wall]
             else:
                 raise InvalidCommand
         elif len(command) >= 3:
@@ -146,4 +148,9 @@ class Command(object):
             return False
 
 if __name__ == "__main__":
-    pass
+    print "Welcome to WallPost!"
+    users = Users()
+    prompt = Command(users)
+    while True:
+        user_input = raw_input(">")
+        print prompt.execute(user_input)

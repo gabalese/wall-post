@@ -75,7 +75,8 @@ class TestSpecs(unittest.TestCase):
         self.command.execute("Charlie follows Alice")
         self.command.execute("Charlie follows Bob")
 
-        charlie_wall = self.command.execute("Charlie wall")
+        self.command.execute("Charlie wall")
+        charlie_wall = self.command._user_wall("Charlie")
         users_in_charlie_wall = set([message.username for message in charlie_wall])
         self.assertTrue(set(["Charlie", "Bob", "Alice"]).issubset(users_in_charlie_wall))
 
