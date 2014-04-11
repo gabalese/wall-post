@@ -1,4 +1,5 @@
 import datetime
+import time
 
 
 class Users(object):
@@ -23,18 +24,7 @@ class Message(object):
     def __init__(self, user, message):
         self.username = user
         self.message = message
-        self.timestamp = datetime.datetime.now().strftime("%s")
-
-    @property
-    def time_ago(self):
-        current_ts = datetime.datetime.now()
-        post_ts = datetime.datetime.fromtimestamp(int(self.timestamp))
-        delta = current_ts - post_ts
-        minutes = delta.seconds / 60
-        if minutes > 0:
-            return "{} minut{} ago".format(minutes, "es" if minutes != 1 else "e")
-        else:
-            return "{} second{} ago".format(delta.seconds, "s" if delta.seconds != 1 else "")
+        self.timestamp = time.time()
 
 
 class User(object):
@@ -65,7 +55,7 @@ class InvalidCommand(Exception):
     pass
 
 
-class Command(object):
+class Client(object):
     """
 
     """
@@ -112,7 +102,7 @@ class Command(object):
         sorted_wall = sorted(wall, key=lambda k: k.timestamp, reverse=True)
         return sorted_wall
 
-    def execute(self, commandstring):
+    def command_parse(self, commandstring):
         """
         Command examples:
         > <username> -> <message>
@@ -131,12 +121,12 @@ class Command(object):
         if len(command) == 1:
             # Simple user name
             timeline = self._usertimeline(command[0])
-            return ["{} ({})".format(message.message, message.time_ago) for message in timeline]
+            return ["{} ({})".format(message.message, time_ago(message.timestamp)) for message in timeline]
         elif len(command) == 2:
             # User reads his wall
             if command[1] == "wall":
                 user_wall = self._user_wall(command[0])
-                return ["{} - {} ({})".format(message.username, message.message, message.time_ago)
+                return ["{} - {} ({})".format(message.username, message.message, time_ago(message.timestamp))
                         for message in user_wall]
             else:
                 raise InvalidCommand
@@ -144,15 +134,24 @@ class Command(object):
             # user posts or follows someone else
             if command[1] == "->":
                 # User posts
-                self._post(command[0], " ".join(command[2:]))
-                return True
+                return self._post(command[0], " ".join(command[2:]))
             if command[1] == "follows":
                 if len(command[2:]) != 1:
                     raise InvalidCommand
                 else:
-                    self._follow(command[0], command[2])
-                    return True
+                    return self._follow(command[0], command[2])
             else:
                 raise InvalidCommand
         else:
-            return False
+            raise InvalidCommand
+
+
+def time_ago(timestamp):
+    current_ts = datetime.datetime.now()
+    post_ts = datetime.datetime.fromtimestamp(timestamp)
+    delta = current_ts - post_ts
+    minutes = delta.seconds / 60
+    if minutes > 0:
+        return "{} minut{} ago".format(minutes, "es" if minutes != 1 else "e")
+    else:
+        return "{} second{} ago".format(delta.seconds, "s" if delta.seconds != 1 else "")
