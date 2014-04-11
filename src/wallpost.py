@@ -49,7 +49,3 @@ class User(object):
 
 class NoSuchUser(Exception):
     pass
-
-
-class InvalidCommand(Exception):
-    pass

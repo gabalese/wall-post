@@ -1,5 +1,8 @@
 import unittest
+from StringIO import StringIO
+import sys
 from src.client import *
+from src.command_parser import CommandParser, InvalidCommand
 
 
 class TestSpecs(unittest.TestCase):
@@ -33,7 +36,7 @@ class TestSpecs(unittest.TestCase):
         status = self.command.command_parse("Alice")
 
         # is this Alice's timeline?
-        for message in self.command.client._usertimeline("Alice"):
+        for message in self.command.client.get_user_timeline("Alice"):
             self.assertTrue(message.username == "Alice")
 
     def test_user_can_follow_other_user(self):
@@ -62,7 +65,7 @@ class TestSpecs(unittest.TestCase):
         self.command.command_parse("Charlie follows Bob")
 
         self.command.command_parse("Charlie wall")
-        charlie_wall = self.command.client._user_wall("Charlie")
+        charlie_wall = self.command.client.get_user_wall("Charlie")
         users_in_charlie_wall = set([message.username for message in charlie_wall])
         self.assertTrue({"Charlie", "Bob", "Alice"}.issubset(users_in_charlie_wall))
 
@@ -99,6 +102,9 @@ class TestUsers(unittest.TestCase):
         # Init command context
         self.command = CommandParser(self.client)
 
+        self.out = StringIO()
+        sys.stdout = self.out
+
     def test_no_such_user(self):
         """
         The most basic command is <Username>, which returns the <Username> timeline
@@ -106,11 +112,6 @@ class TestUsers(unittest.TestCase):
         """
         with self.assertRaises(NoSuchUser):
             self.command.command_parse("Piotr")
-
-    def test_user_follows_no_users(self):
-        self.command.command_parse("Piotr -> Ja liublju tebja")
-        status = self.command.command_parse("Piotr wall")
-        self.assertEqual(len(status), 1)
 
     def test_user_follows_more_than_one_user(self):
         self.command.command_parse("Nadja -> Its'a good day")
@@ -132,9 +133,6 @@ class TestUsers(unittest.TestCase):
             self.assertIsNot(None, [(message.message, message.username) for message in following.getposts()])
 
         self.assertEqual(len(piotr.getposts()), 2)
-
-        status = self.command.command_parse("Piotr wall")
-        self.assertEqual(len(status), 5)
 
     def test_invalid_user(self):
 
@@ -161,9 +159,9 @@ class TestUsers(unittest.TestCase):
         self.command.command_parse("Charlie follows Alice")
         time.sleep(2)
         charlie_wall = self.command.command_parse("Charlie wall")
-        self.assertIn("2 seconds ago", charlie_wall[0])
+        self.assertIn("2 seconds ago", self.out.getvalue())
         charlie_timeline = self.command.command_parse("Charlie")
-        self.assertIn("2 seconds ago", charlie_timeline[0])
+        self.assertIn("2 seconds ago", self.out.getvalue())
 
     def test_time_intervals_minutes(self):
         charlie = User("Charlie")
@@ -173,5 +171,5 @@ class TestUsers(unittest.TestCase):
         timestamp_two_minutes_ago = int(timestamp_now) - 65
         message.timestamp = timestamp_two_minutes_ago
         charlie.addpost(message)
-        charlie_wall = self.command.command_parse("Charlie")
-        self.assertIn("1 minute ago", charlie_wall[0])
+        self.command.command_parse("Charlie")
+        self.assertIn("1 minute ago", self.out.getvalue())

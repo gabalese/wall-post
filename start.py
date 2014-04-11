@@ -1,16 +1,15 @@
 import sys
 from src.wallpost import *
-from src.client import CommandParser, Client
+from src.command_parser import CommandParser, InvalidCommand
+from src.client import Client
 
 if __name__ == "__main__":
     print "Welcome to WallPost!"
-    users = Users()
-    client = Client(users)
-    command = CommandParser(client)
+    command = CommandParser(Client(Users()))
     while True:
         try:
             user_input = raw_input("> ")
-            print command.command_parse(user_input)
+            status = command.command_parse(user_input)
         except InvalidCommand:
             print "Sorry, can't understand your command."
         except NoSuchUser:
