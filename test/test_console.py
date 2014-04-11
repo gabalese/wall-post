@@ -1,8 +1,9 @@
 import unittest
 from StringIO import StringIO
 import sys
+import datetime
 from src.client import *
-from src.command_parser import CommandParser, InvalidCommand
+from src.command_parser import ConsoleCommandParser, InvalidCommand
 
 
 class TestSpecs(unittest.TestCase):
@@ -12,13 +13,13 @@ class TestSpecs(unittest.TestCase):
         """
         self.users = Users()
         self.client = Client(self.users)
-        self.command = CommandParser(self.client)
+        self.command = ConsoleCommandParser(self.client)
 
     def test_user_can_post_message_in_own_timeline(self):
         """
         User can publish messages to a personal timeline
         """
-        status = self.command.command_parse("Alice -> I love the weather today")
+        self.command.command_parse("Alice -> I love the weather today")
         alice = self.users.getuser("Alice")
 
         # Last message is saved in user timeline
@@ -33,7 +34,8 @@ class TestSpecs(unittest.TestCase):
         """
         self.command.command_parse("Alice -> I love the weather today")
         self.command.command_parse("Alice -> It's sunny and warm")
-        status = self.command.command_parse("Alice")
+
+        self.command.command_parse("Alice")
 
         # is this Alice's timeline?
         for message in self.command.client.get_user_timeline("Alice"):
@@ -45,7 +47,7 @@ class TestSpecs(unittest.TestCase):
         """
         self.command.command_parse("Charlie -> Love this place")
         self.command.command_parse("Alice -> Love this Town!")
-        status = self.command.command_parse("Charlie follows Alice")
+        self.command.command_parse("Charlie follows Alice")
 
         # Alice is in Charlie's following list
         charlie = self.users.getuser("Charlie")
@@ -100,7 +102,7 @@ class TestUsers(unittest.TestCase):
         self.users = Users()
         self.client = Client(self.users)
         # Init command context
-        self.command = CommandParser(self.client)
+        self.command = ConsoleCommandParser(self.client)
 
         self.out = StringIO()
         sys.stdout = self.out
@@ -158,9 +160,9 @@ class TestUsers(unittest.TestCase):
         self.command.command_parse("Charlie -> I'm in New York today! Anyone wants to have a coffee?")
         self.command.command_parse("Charlie follows Alice")
         time.sleep(2)
-        charlie_wall = self.command.command_parse("Charlie wall")
+        self.command.command_parse("Charlie wall")
         self.assertIn("2 seconds ago", self.out.getvalue())
-        charlie_timeline = self.command.command_parse("Charlie")
+        self.command.command_parse("Charlie")
         self.assertIn("2 seconds ago", self.out.getvalue())
 
     def test_time_intervals_minutes(self):
@@ -168,8 +170,8 @@ class TestUsers(unittest.TestCase):
         self.users.adduser(charlie)
         message = Message("Charlie", "A-ehm.")
         timestamp_now = datetime.datetime.now().strftime("%s")
-        timestamp_two_minutes_ago = int(timestamp_now) - 65
-        message.timestamp = timestamp_two_minutes_ago
+        timestamp_one_minute_ago = int(timestamp_now) - 65
+        message.timestamp = timestamp_one_minute_ago
         charlie.addpost(message)
         self.command.command_parse("Charlie")
         self.assertIn("1 minute ago", self.out.getvalue())

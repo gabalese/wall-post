@@ -6,7 +6,7 @@ class InvalidCommand(Exception):
     pass
 
 
-class CommandParser(object):
+class ConsoleCommandParser(object):
     def __init__(self, client_context):
         self.client = client_context
         self.bnf = self.make_bnf()
@@ -23,15 +23,16 @@ class CommandParser(object):
         )
 
         user_view = (user.setResultsName("user") + LineEnd()).setParseAction(
-            lambda quals: CommandUserView(self.client).execute(quals["user"])
+            lambda tokens: CommandUserView(self.client).execute(tokens["user"])
         )
 
-        user_follows = (user.setResultsName("user") + verb_to_follow + user.setResultsName("following") + LineEnd()).setParseAction(
-            lambda quals: CommandUserFollow(self.client).execute(quals["user"], quals["following"])
+        user_follows = (
+            user.setResultsName("user") + verb_to_follow + user.setResultsName("following") + LineEnd()).setParseAction(
+            lambda tokens: CommandUserFollow(self.client).execute(tokens["user"], tokens["following"])
         )
 
         user_wall = (user.setResultsName("user") + verb_to_wall + LineEnd()).setParseAction(
-            lambda quals: CommandUserWall(self.client).execute(quals["user"])
+            lambda tokens: CommandUserWall(self.client).execute(tokens["user"])
         )
 
         return user_posts | user_view | user_follows | user_wall
@@ -41,4 +42,3 @@ class CommandParser(object):
             return self.bnf.parseString(string)
         except ParseException:
             raise InvalidCommand
-

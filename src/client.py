@@ -45,3 +45,9 @@ class Client(object):
             wall.extend(user.getposts())
         sorted_wall = sorted(wall, key=lambda k: k.timestamp, reverse=True)
         return sorted_wall
+
+    def get_user_profile(self, username):
+        user = self._users.getuser(username)
+        if not user:
+            raise NoSuchUser
+        return user
