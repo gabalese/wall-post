@@ -30,7 +30,8 @@ class CommandUserView(Command):
         self.format(timeline)
 
     def format(self, user_wall):
-        print ["{} - {} ({})".format(message.username, message.message, self.time_ago(message.timestamp)) for message in user_wall]
+        print ["{} - {} ({})".format(message.username, message.message, self.time_ago(message.timestamp))
+               for message in user_wall]
 
 
 class CommandUserFollow(Command):
@@ -45,6 +46,7 @@ class CommandUserWall(Command):
         self.format(timeline)
 
     def format(self, user_wall):
-        print ["{} - {} ({})".format(message.username, message.message, self.time_ago(message.timestamp)) for message in user_wall]
+        print ["{} - {} ({})".format(message.username, message.message, self.time_ago(message.timestamp))
+               for message in user_wall]
 
 
