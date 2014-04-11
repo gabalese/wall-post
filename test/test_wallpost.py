@@ -1,5 +1,5 @@
 import unittest
-from src.wallpost import *
+from src.client import *
 
 
 class TestSpecs(unittest.TestCase):
@@ -8,8 +8,8 @@ class TestSpecs(unittest.TestCase):
         Init data repositories
         """
         self.users = Users()
-        # Init command context
-        self.command = Client(self.users)
+        self.client = Client(self.users)
+        self.command = CommandParser(self.client)
 
     def test_user_can_post_message_in_own_timeline(self):
         """
@@ -32,11 +32,8 @@ class TestSpecs(unittest.TestCase):
         self.command.command_parse("Alice -> It's sunny and warm")
         status = self.command.command_parse("Alice")
 
-        # status contains the user timeline, a list of Message objects
-        self.assertIsInstance(status, list)
-
         # is this Alice's timeline?
-        for message in self.command._usertimeline("Alice"):
+        for message in self.command.client._usertimeline("Alice"):
             self.assertTrue(message.username == "Alice")
 
     def test_user_can_follow_other_user(self):
@@ -65,7 +62,7 @@ class TestSpecs(unittest.TestCase):
         self.command.command_parse("Charlie follows Bob")
 
         self.command.command_parse("Charlie wall")
-        charlie_wall = self.command._user_wall("Charlie")
+        charlie_wall = self.command.client._user_wall("Charlie")
         users_in_charlie_wall = set([message.username for message in charlie_wall])
         self.assertTrue({"Charlie", "Bob", "Alice"}.issubset(users_in_charlie_wall))
 
@@ -98,8 +95,9 @@ class TestUsers(unittest.TestCase):
         Init data repositories
         """
         self.users = Users()
+        self.client = Client(self.users)
         # Init command context
-        self.command = Client(self.users)
+        self.command = CommandParser(self.client)
 
     def test_no_such_user(self):
         """
